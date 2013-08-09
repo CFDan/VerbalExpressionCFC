@@ -5,14 +5,18 @@
 	<cfset variables.pattern = "">
 	
 	<cfset variables.javaPattern = createObject( "java" , "java.util.regex.Pattern" )>
+
+	<cfset variables.MODIFIER_UNIX_LINES = "(?d)">
+	<cfset variables.MODIFIER_CASE_INSENSITIVE = "(?i)"> 
+	<cfset variables.MODIFIER_COMMENTS = "(?x)"> 
+	<cfset variables.MODIFIER_MULTILINE = "(?m)"> 
+	<cfset variables.MODIFIER_DOTALL = "(?s)"> 
+	<cfset variables.MODIFIER_UNICODE_CASE = "(?u)"> 
+	<cfset variables.MODIFIER_UNICODE_CHARACTER_CLASS = "(?U)">
 	
-	<cfset variables.modifiers = variables.javaPattern.MULTILINE>
-	
-	<!--- Temp --->
-	<cfset variables.name = "">
-	
-	<!--- Main Functions --->
-	
+	<cfset variables.modifiers = [variables.MODIFIER_MULTILINE]>
+		
+	<!--- Main Private Functions --->	
 	<cffunction name="sanitize" returntype="string" access="private">
 		<cfargument name="value" required="No" type="string" default="">
 		<cfif LEN( ARGUMENTS.value ) EQ "">
@@ -20,6 +24,61 @@
 		</cfif>
 		<cfreturn variables.javaPattern.quote( ARGUMENTS.value )>
 	</cffunction>
+	
+	<cffunction name="editModifier" returntype="VerbalExpression" access="private">				
+		<cfargument name="modifier" type="string" required="No" default="">		
+		<cfargument name="action" type="string" default="add">
+		
+		<cfset LOCAL.modifierToEdit = "">
+		
+		<cfif ARGUMENTS.modifier EQ "u">
+			<cfif compare( ARGUMENTS.modifier , "u" ) EQ 0>
+				<cfset ARGUMENTS.modifier = "lcaseU">
+			<cfelse>
+				<cfset ARGUMENTS.modifier = "ucaseU">
+			</cfif>
+		</cfif>
+		
+		<cfswitch expression="#ARGUMENTS.modifier#">
+			<cfcase value="d">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_UNIX_LINES>
+			</cfcase>
+			<cfcase value="i">				
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_CASE_INSENSITIVE>
+			</cfcase>
+			<cfcase value="x">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_COMMENTS>
+			</cfcase>
+			<cfcase value="m">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_MULTILINE>	
+			</cfcase>
+			<cfcase value="s">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_DOTALL>
+			</cfcase>
+			<cfcase value="lcaseU">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_UNICODE_CASE>
+			</cfcase>
+			<cfcase value="ucaseU">
+				<cfset LOCAL.modifierToEdit = variables.MODIFIER_UNICODE_CHARACTER_CLASS>
+			</cfcase>
+		</cfswitch>
+		
+		<cfif ARGUMENTS.action EQ "remove">
+			<cfif LEN( LOCAL.modifierToEdit ) AND arrayFind( variables.modifiers , LOCAL.modifierToEdit )>
+				<cfset arrayDelete( variables.modifiers , LOCAL.modifierToEdit )>
+				<cfset this.add( "")>
+			</cfif>
+		<cfelse>
+			<cfif LEN( LOCAL.modifierToEdit ) AND NOT arrayFind( variables.modifiers , LOCAL.modifierToEdit )>
+				<cfset arrayAppend( variables.modifiers , LOCAL.modifierToEdit )>
+				<cfset this.add( "")>
+			</cfif>
+		</cfif>
+				
+		<cfreturn this>
+	</cffunction>
+	
+	<!--- Main Public Functions --->
 		
 	<cffunction name="add" returntype="VerbalExpression" access="public">
 		<cfargument name="value" type="string" required="No" default="">
@@ -31,7 +90,7 @@
 		</cfif>
 				
 		<cfif variables.source NEQ "">
-			<cfset LOCAL.p = variables.javaPattern.compile( variables.prefixes & variables.source & variables.suffixes, javacast( "int", variables.modifiers ) )>
+			<cfset LOCAL.p = variables.javaPattern.compile( arrayToList( variables.modifiers , "" ) & variables.prefixes & variables.source & variables.suffixes )>
 			<cfset variables.pattern = LOCAL.p.pattern()>
 		</cfif>
 		
@@ -123,6 +182,16 @@
 		
 		<cfreturn this>
 	</cffunction>
+	
+	<!------ TODO:
+	
+	public VerbalExpression replace(String source, String value) {
+        this.add("");
+        this.source.replaceAll(pattern,value);
+        return this;
+    }
+	
+	---------->
 		
 	<cffunction name="lineBreak" returntype="VerbalExpression" access="public">				
 		<cfset this.add( "(\n|(\r\n))" )>		
@@ -166,121 +235,55 @@
 		<cfreturn this>
 	</cffunction>
 	
+	<!---- TODO :
+	
+	public VerbalExpression range(Object[] args) {
+        String value = "[";
+        for(int _from = 0; _from &lt; args.length; _from += 2) {
+            int _to = _from+1;
+            if (args.length &lt;= _to) break;
+            int from = Integer.getInteger(sanitize((String)args[_from]));
+            int to = Integer.getInteger(sanitize((String)args[_to]));
+
+            value += from + "-" + to;
+        }
+
+        value += "]";
+
+        this.add(value);
+        return this;
+    }
+	
+	----------->
+	
 	<cffunction name="withAnyCase" returntype="VerbalExpression" access="public">				
-		<cfargument name="value" type="string" required="No" default="">		
-				
-		<cfset this.add( "(?i)" & ARGUMENTS.value)>		
+		<cfargument name="enable" type="boolean" required="No" default="true">
+		
+		<cfif ARGUMENTS.enable>
+			<cfset addModifier("i")>
+		<cfelse>
+			<cfset removeModifier("i")>
+		</cfif>		
 		
 		<cfreturn this>
 	</cffunction>
 	
-	
-	
-	
 	<cffunction name="addModifier" returntype="VerbalExpression" access="public">				
 		<cfargument name="modifier" type="string" required="No" default="">		
 		
-		<cfif ARGUMENTS.modifier EQ "u">
-			<cfif compare( ARGUMENTS.modifier , "u" ) EQ 0>
-				<cfset ARGUMENTS.modifier = "lcaseU">
-			<cfelse>
-				<cfset ARGUMENTS.modifier = "ucaseU">
-			</cfif>
-		</cfif>
-		
-		<cfswitch expression="#ARGUMENTS.modifier#">
-			<cfcase value="d">
-				<cfset variables.modifiers += variables.javaPattern.UNIX_LINES>
-			</cfcase>
-			<cfcase value="i">
-				<cfset variables.modifiers += variables.javaPattern.CASE_INSENSITIVE>
-				<!--- Hack for Java Pattern not respecting CASE_INSENSITIVE flag --->
-				<cfset variables.prefixes &= "(?i)">
-				<cfset this.add( "")>
-			</cfcase>
-			<cfcase value="x">
-				<cfset variables.modifiers += variables.javaPattern.COMMENTS>
-			</cfcase>
-			<cfcase value="m">
-				<cfset variables.modifiers += variables.javaPattern.MULTILINE>				
-			</cfcase>
-			<cfcase value="s">
-				<cfset variables.modifiers += variables.javaPattern.DOTALL>
-				<!--- Hack for Java Pattern not respecting CASE_INSENSITIVE flag --->
-				<cfset variables.prefixes &= "(?s)">
-				<cfset this.add("")>
-			</cfcase>
-			<cfcase value="lcaseU">
-				<cfset variables.modifiers += variables.javaPattern.UNICODE_CASE>
-			</cfcase>
-			<cfcase value="ucaseU">
-				<cfset variables.modifiers += variables.javaPattern.UNICODE_CHARACTER_CLASS>
-			</cfcase>
-		</cfswitch>
-		
-		<cfset this.add("")>
-		
-		<cfreturn this>
+		<cfreturn editModifier(
+			modifier	=	ARGUMENTS.modifier,
+			action		=	"add"
+		)>
 	</cffunction>
 	
 	<cffunction name="removeModifier" returntype="VerbalExpression" access="public">				
 		<cfargument name="modifier" type="string" required="No" default="">		
 		
-		<cfif ARGUMENTS.modifier EQ "u">
-			<cfif compare( ARGUMENTS.modifier , "u" ) EQ 0>
-				<cfset ARGUMENTS.modifier = "lcaseU">
-			<cfelse>
-				<cfset ARGUMENTS.modifier = "ucaseU">
-			</cfif>
-		</cfif>
-		
-		<cfswitch expression="#ARGUMENTS.modifier#">
-			<cfcase value="d">
-				<cfset variables.modifiers -= variables.javaPattern.UNIX_LINES>
-			</cfcase>
-			<cfcase value="i">
-				<cfset variables.modifiers -= variables.javaPattern.CASE_INSENSITIVE>
-				<!--- Hack for Java Pattern not respecting CASE_INSENSITIVE flag --->
-				<cfset variables.prefixes = replaceNoCase( variables.prefixes , "(?iu)" , "" , "ALL" )>
-				<cfset this.add( "")>
-			</cfcase>
-			<cfcase value="x">
-				<cfset variables.modifiers -= variables.javaPattern.COMMENTS>
-			</cfcase>
-			<cfcase value="m">
-				<cfset variables.modifiers -= variables.javaPattern.MULTILINE>
-			</cfcase>
-			<cfcase value="s">
-				<cfset variables.modifiers -= variables.javaPattern.DOTALL>
-				<!--- Hack for Java Pattern not respecting CASE_INSENSITIVE flag --->
-				<cfset variables.prefixes = replaceNoCase( variables.prefixes , "(?s)" , "" , "ALL" )>
-				<cfset this.add("")>				
-			</cfcase>
-			<cfcase value="lcaseU">
-				<cfset variables.modifiers -= variables.javaPattern.UNICODE_CASE>
-			</cfcase>
-			<cfcase value="ucaseU">
-				<cfset variables.modifiers -= variables.javaPattern.UNICODE_CHARACTER_CLASS>
-			</cfcase>
-		</cfswitch>
-		
-		<cfset this.add("")>
-		
-		<cfreturn this>
-	</cffunction>
-						
-	<cffunction name="test" returntype="String" access="public">
-		<cfargument name="toTest" type="string" required="Yes">
-		
-		<cfset this.add("")>		
-		
-		<cfreturn variables.javaPattern.matches( variables.pattern , ARGUMENTS.toTest )>
-	</cffunction>
-	
-    <cffunction name="toString" returntype="String" access="public">
-		<cfset this.add("")>		
-		
-		<cfreturn variables.pattern.toString()>
+		<cfreturn editModifier(
+			modifier	=	ARGUMENTS.modifier,
+			action		=	"remove"
+		)>
 	</cffunction>
 	
 	<cffunction name="searchOneLine" returntype="VerbalExpression" access="public">
@@ -297,19 +300,62 @@
 		<cfreturn this>
 	</cffunction>
 	
-	<!--- Test Functions --->	
-	<cffunction name="AddValue" returntype="VerbalExpression" access="public">
-		<cfargument name="val" type="string" required="Yes">
+	<cffunction name="multiple" returntype="VerbalExpression" access="public">				
+		<cfargument name="value" type="string" required="No" default="">		
 		
-		<cfset variables.name = listAppend( variables.name , ARGUMENTS.val )>
+		<cfset ARGUMENTS.value = sanitize( ARGUMENTS.value )>
+		
+		<cfswitch expression="#LEFT( ARGUMENTS.value , 1 )#">
+			<cfcase value="*">
+			
+			</cfcase>
+			<cfcase value="+">
+				<cfbreak>
+			</cfcase>
+			<cfdefaultcase>
+				<cfset ARGUMENTS.value &= "+">
+			</cfdefaultcase>
+		</cfswitch>
+		
+		<cfset this.add( ARGUMENTS.value )>		
 		
 		<cfreturn this>
 	</cffunction>
 	
-	<cffunction name="ToStringValue" returntype="String" access="public">
+	<cffunction name="or" returntype="VerbalExpression" access="public">				
+		<cfargument name="value" type="string" required="No" default="">		
+		
+		<cfif NOT find( "(" , variables.prefixes )>
+			<cfset variables.prefixes &= "(">
+		</cfif>
+		
+		<cfif NOT find( ")" , variables.suffixes )>
+			<cfset variables.suffixes = ")" & variables.suffixes>
+		</cfif>
 				
-		<cfreturn variables.name>
+		<cfset this.add( ")|(" )>		
+		
+		<cfif LEN( ARGUMENTS.value )>
+			<cfset then( ARGUMENTS.value )>
+		</cfif>
+		
+		<cfreturn this>
 	</cffunction>
+							
+	<cffunction name="test" returntype="String" access="public">
+		<cfargument name="toTest" type="string" required="Yes">
+		
+		<cfset this.add("")>		
+		
+		<cfreturn variables.javaPattern.matches( variables.pattern , ARGUMENTS.toTest )>
+	</cffunction>
+	
+    <cffunction name="toString" returntype="String" access="public">
+		<cfset this.add("")>		
+		
+		<cfreturn variables.pattern.toString()>
+	</cffunction>
+	
 	
 	<cffunction name="Debug" output="Yes" access="public">
 		<cfdump var="#variables#">

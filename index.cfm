@@ -5,10 +5,10 @@ Java Source : https://github.com/VerbalExpressions/JavaVerbalExpressions/blob/ma
 <h3>Verbal Expression</h3>
 
 <cfset vb = new VerbalExpression()>
-<cfset vb.startOfLine().add("Dan").anything().add("Mackey").addModifier("m").addModifier("s")>
+<cfset vb.startOfLine().add("Dan").anything().add("Mackey").multiple("x").then("rocks").addModifier("s").removeModifier("m")>
 
 <cfsavecontent variable="LOCAL.testString">Dan
-Mackey</cfsavecontent>
+Mackeyxxxrocks</cfsavecontent>
 
 <cfset LOCAL.matches = vb.test( LOCAL.testString )>
 
@@ -26,11 +26,6 @@ Mackey</cfsavecontent>
 </pre>
 </cfoutput>
 
-<hr>
-
-<h4>Debug</h4>
-<cfset vb.Debug()>
-<hr>
 
 <h3>Url</h3>
 <cfset vb = new VerbalExpression()>
@@ -39,3 +34,9 @@ Mackey</cfsavecontent>
 <cfset LOCAL.matches = vb.test( "https://www.google.com/" )>
 
 <cfdump var="#LOCAL.matches#">
+
+<hr>
+
+<h4>Debug</h4>
+<cfset vb.Debug()>
+<hr>
