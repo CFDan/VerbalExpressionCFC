@@ -183,16 +183,19 @@
 		<cfreturn this>
 	</cffunction>
 	
-	<!------ TODO:
-	
-	public VerbalExpression replace(String source, String value) {
-        this.add("");
-        this.source.replaceAll(pattern,value);
-        return this;
-    }
-	
-	---------->
+	<cffunction name="replace" returntype="string" access="public" output="No">
+		<cfargument name="source" type="string" required="No" default="">				
+		<cfargument name="value" type="string" required="No" default="">		
 		
+		<cfset LOCAL.result = ARGUMENTS.value>
+		
+		<cfset this.add("")>
+		
+		<cfset LOCAL.result = ARGUMENTS.source.replaceAll( variables.pattern, ARGUMENTS.value )>
+				
+		<cfreturn LOCAL.result>
+	</cffunction>
+	
 	<cffunction name="lineBreak" returntype="VerbalExpression" access="public">				
 		<cfset this.add( "(\n|(\r\n))" )>		
 		
@@ -235,26 +238,28 @@
 		<cfreturn this>
 	</cffunction>
 	
-	<!---- TODO :
 	
-	public VerbalExpression range(Object[] args) {
-        String value = "[";
-        for(int _from = 0; _from &lt; args.length; _from += 2) {
-            int _to = _from+1;
-            if (args.length &lt;= _to) break;
-            int from = Integer.getInteger(sanitize((String)args[_from]));
-            int to = Integer.getInteger(sanitize((String)args[_to]));
-
-            value += from + "-" + to;
-        }
-
-        value += "]";
-
-        this.add(value);
-        return this;
-    }
+	<cffunction name="range" returntype="VerbalExpression" access="public" output="No">						
+		<cfset LOCAL.numberOfKeys = structCount( ARGUMENTS )>
+		
+		<cfset LOCAL.value = "[">
+				
+		<cfloop from="1" to="#LOCAL.numberOfKeys#" index="LOCAL.key" step="2">
+			<cfset LOCAL._to = LOCAL.key+1>
+			<cfif NOT structKeyExists( ARGUMENTS , LOCAL._to )>
+				<cfbreak>
+			</cfif>
+			<cfset LOCAL.from = ARGUMENTS[ LOCAL.key ]>
+			<cfset LOCAL.to = ARGUMENTS[ LOCAL._to ]>			
+			<cfset LOCAL.value &= LOCAL.from & "-" & LOCAL.to>
+		</cfloop>
+		<cfset LOCAL.value &= "]">
+		
+		<cfset this.add( LOCAL.value )>
+		
+		<cfreturn this>
+	</cffunction>
 	
-	----------->
 	
 	<cffunction name="withAnyCase" returntype="VerbalExpression" access="public">				
 		<cfargument name="enable" type="boolean" required="No" default="true">

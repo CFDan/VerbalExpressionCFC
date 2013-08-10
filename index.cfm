@@ -5,6 +5,12 @@ Java Source : https://github.com/VerbalExpressions/JavaVerbalExpressions/blob/ma
 <h3>Verbal Expression</h3>
 
 <cfset vb = new VerbalExpression()>
+
+<cfset x = vb.add("daniel").range("A","Z","a","z").range(1,9).range(1,9).range(1,9).test("danielM123")>
+
+<cfoutput>#vb.toString()#:#x#</cfoutput>
+<cfabort>
+
 <cfset vb.startOfLine().add("Dan").anything().add("Mackey").multiple("x").then("rocks").addModifier("s").removeModifier("m")>
 
 <cfsavecontent variable="LOCAL.testString">Dan
@@ -26,6 +32,13 @@ Mackeyxxxrocks</cfsavecontent>
 </pre>
 </cfoutput>
 
+<h4>Replace</h4>
+
+<cfset replaceMe = "Replace the bird ok another rabbit">
+
+<cfset result = new VerbalExpression().find( "bird" ).anything().then("ok").replace( replaceMe ,"duck")>
+
+<cfoutput>#result#</cfoutput>
 
 <h3>Url</h3>
 <cfset vb = new VerbalExpression()>
