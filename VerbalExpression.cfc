@@ -273,6 +273,19 @@
 		<cfreturn this>
 	</cffunction>
 	
+	
+	<cffunction name="dotall" returntype="VerbalExpression" access="public">				
+		<cfargument name="enable" type="boolean" required="No" default="true">
+		
+		<cfif ARGUMENTS.enable>
+			<cfset addModifier("s")>
+		<cfelse>
+			<cfset removeModifier("s")>
+		</cfif>		
+		
+		<cfreturn this>
+	</cffunction>
+		
 	<cffunction name="addModifier" returntype="VerbalExpression" access="public">				
 		<cfargument name="modifier" type="string" required="No" default="">		
 		
