@@ -220,6 +220,12 @@
 		<cfreturn this>
 	</cffunction>
 	
+	<cffunction name="number" returntype="VerbalExpression" access="public">				
+		<cfset this.add( "[0-9]+" )>		
+		
+		<cfreturn this>
+	</cffunction>
+	
 	<cffunction name="anyOf" returntype="VerbalExpression" access="public">				
 		<cfargument name="value" type="string" required="No" default="">		
 		
